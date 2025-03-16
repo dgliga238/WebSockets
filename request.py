@@ -3,6 +3,8 @@ import ssl
 import sys
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+import urllib.parse
+
 
 def clean_html(text):
     # Parse the HTML with BeautifulSoup
@@ -10,6 +12,7 @@ def clean_html(text):
     for script_or_style in soup(["style", "script"]):
         script_or_style.decompose()  # Remove tag
     return soup.get_text(separator='\n', strip=True)
+
 
 def fetch_url(url):
     parsed_url = urlparse(url)
@@ -49,18 +52,41 @@ def fetch_url(url):
     except Exception as e:
         return f"Error fetching {url}: {e}"
 
+
+def search_term(search_term):
+    # Search Google with the term and fetch top 10 results
+    query = urllib.parse.urlencode({"q": search_term})
+    url = f"https://www.google.com/search?{query}"
+
+    print(f"Searching for: {search_term}")
+    response = fetch_url(url)
+
+    # Extract links from the response (Google search result links are inside <a> tags)
+    soup = BeautifulSoup(response, 'html.parser')
+    results = []
+
+    for link in soup.find_all('a', href=True):
+        href = link['href']
+        if href.startswith('/url?q='):
+            parsed_link = urllib.parse.unquote(href.split('/url?q=')[1].split('&')[0])
+            results.append(parsed_link)
+
+    # Print the top 10 results (or fewer if there are less)
+    for i, result in enumerate(results[:10]):
+        print(f"{i + 1}. {result}")
+
 def main():
-    if len(sys.argv) != 3 or sys.argv[1] != "-u":
-        print("Usage: go2web -u <URL>")
-        sys.exit(1)
+    command = sys.argv[1]
+    if command == 'go2web' and sys.argv[2] == '-u':
+        if len(sys.argv) != 4:
+            print("Usage: go2web -u <URL>")
+            sys.exit(1)
 
-    url = sys.argv[2]
-    if not url.startswith("http"):
-        url = "http://" + url
+        url = sys.argv[3]
+        if not url.startswith("http"):
+            url = "http://" + url
+        print(fetch_url(url))
 
-    print(fetch_url(url))
 
 if __name__ == "__main__":
     main()
-
-
