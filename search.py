@@ -47,19 +47,19 @@ def fetch_search_results(query, max_results=10):
 def extract_results(html, max_results, base_url):
     soup = BeautifulSoup(html, 'html.parser')
     results = []
-
+    
     for idx, link in enumerate(soup.select(".result__title a"), start=1):
         title = link.get_text(strip=True)
         href = link["href"]
-
+        
         # Ensure full URL
         full_url = urljoin(base_url, href)
-
+        
         results.append((title, full_url))
 
         if len(results) >= max_results:
             break
-
+    
     return results
 
 
@@ -101,3 +101,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
