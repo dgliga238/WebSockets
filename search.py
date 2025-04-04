@@ -41,6 +41,9 @@ def fetch_search_results(query, max_results=10):
         headers, body = response_text.split("\r\n\r\n", 1)
         return extract_results(body, max_results, base_url)
     except Exception as e:
+        import traceback
+        print(1111)
+        print(traceback.format_exc())
         return [("Error fetching search results", "")]
 
 
