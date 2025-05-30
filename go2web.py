@@ -1,11 +1,9 @@
 import sys
-from go2web import fetch_url
+from request import fetch_url
 from search import fetch_search_results, open_link_in_browser
 
 
 def main():
-
-
     command = sys.argv[1]
 
     if command == '-h':

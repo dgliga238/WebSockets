@@ -1,15 +1,26 @@
 import socket
 import ssl
 import sys
+import re
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 
 def clean_html(text):
-    # Parse the HTML with BeautifulSoup
+    """Removes scripts and styles from HTML and returns clean text."""
     soup = BeautifulSoup(text, 'html.parser')
     for script_or_style in soup(["style", "script"]):
         script_or_style.decompose()  # Remove tag
     return soup.get_text(separator='\n', strip=True)
+
+def get_redirect_location(headers: str, base_uri: str) -> str | None:
+    """Extracts and resolves the redirect location from headers."""
+    location_match = re.search(r"Location: (.+)", headers, re.IGNORECASE)
+    if location_match:
+        redirect_url = location_match.group(1).strip()
+        if not redirect_url.startswith("http"):
+            redirect_url = urljoin(base_uri, redirect_url)
+        return redirect_url
+    return None
 
 def fetch_url(url, max_redirects=5):
     """
@@ -49,20 +60,16 @@ def fetch_url(url, max_redirects=5):
             response_text = response.decode(errors="ignore")
             headers, body = response_text.split("\r\n\r\n", 1)
 
-            # Check for redirection (HTTP 301 or 302)
-            if "301 Moved Permanently" in headers or "302 Found" in headers:
-                for line in headers.split("\r\n"):
-                    if line.lower().startswith("location:"):
-                        new_url = line.split(":", 1)[1].strip()
-                        url = urljoin(url, new_url)  # Handle relative redirects
-                        print(f"Redirecting to: {url}")
-                        break
+            # Check for redirection using the get_redirect_location function
+            redirect_url = get_redirect_location(headers, url)
+            if redirect_url:
+                print(f"Redirecting to: {redirect_url}")
+                url = redirect_url  # Follow the redirect
             else:
                 return clean_html(body)  # Return cleaned HTML text
 
         except Exception as e:
             import traceback
-            print(1111)
             print(traceback.format_exc())
             return f"Error fetching {url}: {e}"
 
@@ -75,11 +82,9 @@ def main():
 
     url = sys.argv[2]
     if not url.startswith("http"):
-        url = "http://" + url
+        url = "https://" + url
 
     print(fetch_url(url))
 
 if __name__ == "__main__":
     main()
-
-
