@@ -7,11 +7,14 @@ from bs4 import BeautifulSoup
 
 
 def fetch_search_results(query, max_results=10):
+    # Build the DuckDuckGo search URL with query parameters
+    params = {'q': query}
     base_url = "https://html.duckduckgo.com/html"
-    search_url = f"{base_url}?{urlencode({'q': query})}"
+    search_url = base_url + "?" + urlencode(params)
+
     parsed_url = urlparse(search_url)
     host = parsed_url.netloc
-    path = parsed_url.path + '?' + parsed_url.query
+    path = parsed_url.path + "?" + parsed_url.query
     port = 443  # HTTPS default port
 
     request = f"GET {path} HTTP/1.1\r\n" \
@@ -20,13 +23,11 @@ def fetch_search_results(query, max_results=10):
               f"Connection: close\r\n\r\n"
 
     try:
-        # Create a socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         context = ssl.create_default_context()
         sock = context.wrap_socket(sock, server_hostname=host)
         sock.connect((host, port))
 
-        # Send the request
         sock.sendall(request.encode())
         response = b""
         while True:
@@ -36,7 +37,6 @@ def fetch_search_results(query, max_results=10):
             response += chunk
         sock.close()
 
-        # Extract HTML content
         response_text = response.decode(errors="ignore")
         headers, body = response_text.split("\r\n\r\n", 1)
         return extract_results(body, max_results, base_url)

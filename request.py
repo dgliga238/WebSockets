@@ -82,7 +82,7 @@ def main():
 
     url = sys.argv[2]
     if not url.startswith("http"):
-        url = "http://" + url
+        url = "https://" + url
 
     print(fetch_url(url))
 
